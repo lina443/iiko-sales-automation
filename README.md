@@ -1,84 +1,115 @@
-☕ iiko Sales Process Automation — BA Case Study
+# ☕ iiko Sales Process Automation — BA Case Study
 
-Portfolio project · Business Analyst · Process Modeling · Python Analytics
+> **Portfolio project** · Business Analyst · Process Modeling · Python Analytics
 
-A real business analysis case: automating the full sales cycle in a café using the iiko POS system — from table opening to shift close.
 
-📌 Context
-A café (50 seats, 3 POS terminals) faced recurring operational issues:
+## 📌 The Problem
 
-Revenue discrepancies between shifts
-Slow shift closing (40+ minutes)
-Order errors during peak hours
-No real-time visibility into revenue
+A café (50 seats, 3 POS terminals) was losing revenue and staff time due to fully manual order tracking. Shift reports were compiled in Excel at the end of each day.
 
-All order tracking was manual. Shift reports were compiled in Excel.
+The daily reality:
 
-🎯 Goal
-Automate the full sales cycle using iiko POS — reducing human error and providing real-time visibility into revenue and staff performance.
+- Revenue discrepancies between shifts — 3 to 5 per week, source unknown
+- Shift closing took 40+ minutes of manual reconciliation
+- Up to 8 order errors per day during peak hours
+- No visibility into revenue until the shift was over
 
-📂 Repository Structure
-.
-├── docs/
-│   └── iiko_sales_case.pdf          # One-page visual case study
-├── iiko_analytics.py                # pandas KPI analysis script
-├── iiko_cancellation_worker.py      # Python BPMN External Task Worker (Camunda)
-└── README.md
 
-🗺 Process Map (BPMN)
+## 🎯 What Was Done
+
+I analyzed the full sales process, identified the root causes of each problem, and designed an automation solution using the iiko POS system.
+
+**Business outcomes:**
+
+|Metric               |Before    |After    |Result|
+|---------------------|----------|---------|------|
+|Shift closing time   |40 min    |10 min   |▼ 75% |
+|Revenue discrepancies|3–5 / week|0        |▼ 100%|
+|Order errors         |~8 / day  |~1 / day |▼ 87% |
+|Revenue visibility   |End of day|Real-time|✓ Live|
+
+
+## 🗺 Process Map (BPMN)
+
 The sales process was modeled in BPMN 2.0 across four swim lanes:
-LaneResponsibilitiesGuestArrives, reviews menu, receives dishWaiterOpens table in iiko, takes and sends orderKitchenPrepares dish, marks ready in iikoCashierProcesses payment, closes check
 
-⚙️ Solution — iiko Configuration
-FeatureBusiness ImpactTable managementOrder routed to kitchen display instantly — no verbal errorsMenu modifiersConfigured dish options — reduces incorrect ordersPayment integrationCard terminal linked to iiko — no manual sum entryAccess controlDiscounts require manager PIN — eliminates unauthorized write-offsAuto Z-reportShift closes automatically with full breakdownReal-time dashboardRevenue, avg check, cancellations visible at any moment
-
-📊 Results
-MetricBeforeAfterResultShift closing time40 min10 min▼ 75%Revenue discrepancies3–5 / week0▼ 100%Order errors~8 / day~1 / day▼ 87%Revenue visibilityEnd of dayReal-time✓ Live
-
-📋 KPI Framework
-KPIFormulaTargetAverage checkRevenue / Number of checks> prev. periodRevenue by waiterSum of closed checks per waiterGrowth trendCancellation rateCancelled items / Total items< 2%Shift close timeTime from last order to Z-report< 15 min
-
-🐍 Python Analytics
-iiko_analytics.py
-pandas script that computes all KPIs from iiko export data:
-
-Merge — enriches orders with menu categories (left join to avoid data loss)
-groupby + agg — revenue, order count, avg check per waiter
-pivot_table — revenue by category × shift (explicit aggfunc="sum")
-Validation — asserts that pivot totals match raw data (control sum)
-JSON report — outputs KPI summary ready for BPMN / API consumption
-
-bashpython iiko_analytics.py
-iiko_cancellation_worker.py
-Camunda External Task Worker — connects Python to a BPMN process:
-
-Fetches task from Camunda engine
-Calculates cancellation rate
-Returns result to process → Gateway routes to "alert manager" or "continue"
-
-bashpython iiko_cancellation_worker.py  # runs local test by default
-
-📝 User Story
-
-As a waiter,
-I want to open a table in iiko and take an order,
-so that the kitchen receives it instantly without verbal communication,
-and the check is automatically formed for the guest.
+|Lane   |Responsibilities                          |
+|-------|------------------------------------------|
+|Guest  |Arrives, reviews menu, receives dish      |
+|Waiter |Opens table in iiko, takes and sends order|
+|Kitchen|Prepares dish, marks ready in iiko        |
+|Cashier|Processes payment, closes check           |
 
 
-🛠 Skills Demonstrated
+## ⚙️ iiko Configuration — Key Decisions
 
-BPMN 2.0 — full process modeling across swim lanes
-Requirements Analysis — AS-IS → TO-BE, stakeholder interviews
-KPI Design — metrics framework with formulas and targets
-Python / pandas — merge, groupby, pivot_table, data validation
-Camunda integration — External Task Worker pattern
-REST / JSON — API communication between Python and BPMN engine
+|Feature            |Why it matters                                                    |
+|-------------------|------------------------------------------------------------------|
+|Table management   |Order routed to kitchen display instantly — no verbal errors      |
+|Menu modifiers     |Configured dish options — reduces incorrect orders                |
+|Payment integration|Card terminal linked to iiko — no manual sum entry                |
+|Access control     |Discounts require manager PIN — eliminates unauthorized write-offs|
+|Auto Z-report      |Shift closes automatically with full breakdown                    |
+|Real-time dashboard|Revenue, avg check, cancellations visible at any moment           |
 
 
-👤 Author
-Karolina Gergert — Business Analyst
-📍 Buenos Aires, Argentina
-linkedin.com/in/karolina-gergert-6176b2401
+## 📋 KPI Framework
 
-This project is part of a BA portfolio demonstrating real-world process analysis and automation skills.
+|KPI              |Formula                         |Target        |
+|-----------------|--------------------------------|--------------|
+|Average check    |Revenue / Number of checks      |> prev. period|
+|Revenue by waiter|Sum of closed checks per waiter |Growth trend  |
+|Cancellation rate|Cancelled items / Total items   |< 2%          |
+|Shift close time |Time from last order to Z-report|< 15 min      |
+
+
+## 🐍 Python Scripts
+
+### `iiko_analytics.py`
+
+Computes all KPIs from iiko export data using pandas:
+
+- **Merge** — enriches orders with menu categories (left join to preserve all records)
+- **groupby + agg** — revenue, order count, avg check per waiter
+- **pivot_table** — revenue by category × shift
+- **Validation** — asserts that pivot totals match raw data
+
+### `iiko_cancellation_worker.py`
+
+Connects Python to a BPMN process via Camunda External Task Worker:
+
+- Fetches pending task from Camunda engine
+- Calculates cancellation rate from latest data
+- Returns result → BPMN gateway routes to “alert manager” or “continue”
+
+```bash
+python iiko_analytics.py
+python iiko_cancellation_worker.py
+```
+
+## 📂 Repository Structure
+
+```
+.
+├── iiko_analytics.py           # pandas KPI analysis
+├── iiko_cancellation_worker.py # Camunda External Task Worker
+├── iiko case EN.pdf            # One-page visual case study (English)
+├── iiko case RU.pdf            # One-page visual case study (Russian)
+└── README.md
+```
+
+## 🛠 Skills Demonstrated
+
+- **BPMN 2.0** — full process modeling across swim lanes, AS-IS → TO-BE
+- **Requirements Analysis** — stakeholder interviews, root cause identification
+- **KPI Design** — metrics framework with formulas and measurable targets
+- **Python / pandas** — data merging, aggregation, pivot analysis, validation
+- **Camunda integration** — External Task Worker pattern, REST communication
+- **Business Analysis** — translated operational pain into structured system requirements
+
+
+## 👤 Author
+
+**Karolina Gergert** — Business Analyst
+Background: client relationship management, requirements documentation (BPMN, User Story Map, OpenAPI)
+[linkedin.com/in/karolina-gergert-6176b2401](https://linkedin.com/in/karolina-gergert-6176b2401)
